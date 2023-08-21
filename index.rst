@@ -89,7 +89,7 @@ The replication process will discover new ``insert ID`` tokens in APDB, copy the
 APDB has special table that tracks newly-created ``insert ID`` tokens, PPDB (or a separate replication database) will probably need similar approach to track tokens that have been replicated.
 
 The ordering of transfers in replication process is important.
-For optimal performance the DIAObject records in Cassandra implementation do not have their ``validityEnd`` column updated, so it always is always ``NULL``.
+For optimal performance the DIAObject records in Cassandra implementation do not have their ``validityEnd`` column updated, so it is always ``NULL``.
 When DIAObjects are copied to PPDB, the replication process has to populate ``validityEnd`` of the DIAObject which is already in PPDB using ``validityStart`` of the same DIAObject being replicated.
 This implies that the time order of the replication needs to be the same as time order in which data were originally inserted into APDB, without such ordering it will be very difficult to manage ``validityEnd`` updates.
 
