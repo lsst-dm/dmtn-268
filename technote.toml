@@ -1,0 +1,23 @@
+[technote]
+id = "DMTN-268"
+series_id = "DMTN"
+canonical_url = "https://dmtn-268.lsst.io"
+github_url = "https://github.com/lsst-dm/dmtn-268"
+github_default_branch = "main"
+date_created = 2024-06-10T19:40:25Z
+organization.name = "Vera C. Rubin Observatory"
+organization.ror = "https://ror.org/048g3cy84"
+license.id = "CC-BY-4.0"
+
+[technote.status]
+state = "stable"
+
+[[technote.authors]]
+name.given = "Andy"
+name.family = "Salnikov"
+internal_id = "salnikova"
+orcid = "https://orcid.org/0000-0002-3623-0161"
+[[technote.authors.affiliations]]
+name = "SLAC National Accelerator Laboratory"
+internal_id = "SLAC"
+address = "2575 Sand Hill Rd., Menlo Park, CA 94025, USA"
