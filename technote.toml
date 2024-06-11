@@ -1,8 +1,8 @@
 [technote]
-id = "DMTN-293"
+id = "DMTN-268"
 series_id = "DMTN"
-canonical_url = "https://dmtn-293.lsst.io"
-github_url = "https://github.com/lsst-dm/dmtn-293"
+canonical_url = "https://dmtn-268.lsst.io"
+github_url = "https://github.com/lsst-dm/dmtn-268"
 github_default_branch = "main"
 date_created = 2024-06-10T19:40:25Z
 organization.name = "Vera C. Rubin Observatory"
@@ -10,7 +10,7 @@ organization.ror = "https://ror.org/048g3cy84"
 license.id = "CC-BY-4.0"
 
 [technote.status]
-state = "draft"
+state = "stable"
 
 [[technote.authors]]
 name.given = "Andy"

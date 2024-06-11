@@ -1,14 +1,6 @@
-:tocdepth: 1
-
-.. sectnum::
-
-.. Metadata such as the title, authors, and description are set in metadata.yaml
-
-.. TODO: Delete the note below before merging new content to the main branch.
-
-.. note::
-
-   **This technote is a work-in-progress.**
+######################################
+Data replication between APDB and PPDB
+######################################
 
 Abstract
 ========
@@ -83,10 +75,11 @@ Cassandra supports secondary indexing, but its performance is not adequate for r
 One of the ideas suggested at `PPDB architecture meeting`_ was to write new DIA records to a separate set of files and transfer those files asynchronously to PPDB.
 This approach would cause many complications, so the alternative solution was designed that uses the same Cassandra storage.
 
-The new records, as they are inserted into regular DIA tables, are also stored in separate set of staging tables that use time-based partitioning and indexing.
-Every store operation that inserts a number of records into APDB is identified by an ``insert ID`` token.
-The replication process will discover new ``insert ID`` tokens in APDB, copy the data corresponding to that token to PPDB, and remove that token and its corresponding records from APDB.
-APDB has special table that tracks newly-created ``insert ID`` tokens, PPDB (or a separate replication database) will probably need similar approach to track tokens that have been replicated.
+The new records, as they are inserted into regular DIA tables, are also stored in separate set of replica tables that use time-based partitioning and indexing.
+Every store operation that inserts a number of records into APDB is associated with a ``chunk ID`` token.
+The replication process will discover ``chunk ID`` tokens in APDB that are ready to be transferred, and  copy the data corresponding to that token to PPDB.
+The tokens and their corresponding data will be removed from APDB after some period.
+APDB has special table that tracks newly-created ``chunk ID`` tokens, PPDB (or a separate replication database) will need similar approach to track tokens that have been replicated.
 
 The ordering of transfers in replication process is important.
 For optimal performance the DIAObject records in Cassandra implementation do not have their ``validityEnd`` column updated, so it is always ``NULL``.
@@ -96,35 +89,31 @@ This implies that the time order of the replication needs to be the same as time
 To implement propagation of PPDB updates to APDB the replication process will need to know which DIASources need to be re-associated and which DIAObjects need to be removed.
 To support this, PPDB will probably use similar approach of keeping the separate log of updates that can be replayed on APDB side.
 
-At this point APDB already implements all operations needed to support replication process, but it was never tested as we do not have PPDB instance or its corresponding API yet.
-
 
 Replicating non-DIA tables
 ==========================
 
 New SSSource and SSObject records produced by AP pipeline need to be copied to PPDB along with DIA tables.
-It would be reasonable to use the same mechanism relying on ``insert ID`` tokens and separate staging tables for the new records.
+It could be reasonable to use the same mechanism relying on ``chunk ID`` tokens and separate staging tables for the new records.
 Special care will be needed in the replication process to order PPDB updates, as SSSource records have a dependency on their corresponding DIASource records and some DIASources are linked to SSObjects (it may not be expressed explicitly in the current ``sdm_schema`` definition, but it should be).
-Additionally, as some DIASources can be embargoed for a period of time or permanently, the corresponding SSSource and SSObject records replication has to be delayed as well.
 
 Details of replication from PPDB to APDB depend on how things get updated in PPDB.
-``MPCORB`` table is recomputed completely for each daily processing, so it makes sense to transfer the complete contents of that table to APDB and drop/recreate ``MPCORB`` in APDB, which may also be most efficient approach for Cassandra.
+``MPCORB`` table is recomputed completely for each daily processing, so it makes sense to transfer the complete contents of that table to APDB and drop/recreate ``MPCORB`` table in APDB, which may also be most efficient approach for Cassandra.
 ``SSObject`` table can use the same approach as it has one-to-one correspondence with ``MPCORB`` records.
 ``SSSource`` table, on the other hand, may be more efficient to transfer in incremental way, only including additions since previous replication.
 To support incremental ``SSSource`` updates, PPDB may need to implement tracking of the updates similarly to what was done on APDB side.
 Potential complications for incremental replication could arise if PPDB can remove or replace existing records, as opposed to just adding new records.
 Incremental updates may also be problematic if spatial index needs to be added to the records.
 
-For both DIA and non-DIA tables, the replication process will need a non-trivial logic to handle ordering and dependencies between updates, and to manage potentially delayed transfers of embargoed records.
+For both DIA and non-DIA tables, the replication process will need a non-trivial logic to handle ordering and dependencies between updates.
 This logic will likely need an extensive persistent state to keep the record of the transfers.
-For that purpose it may be necessary to set up an additional PostgreSQL instance which should be naturally a part of the embargo rack.
+For that purpose it may be necessary to create additional tables in PostgreSQL database, possibly in a separate schema or database.
 
 
 Further work
 ============
 
-USDF is in the process of setting up hardware for Cassandra cluster, once Cassandra is deployed this cluster can be used for various tests.
-This platform will also be used for developing the replication system (which will also need a test PPDB instance).
+USDF is presently has a Cassandra cluster that will be used for various tests with AP pipelines and for development of replication service.
 The replication system will need an interface to both APDB and PPDB, ``dax_apdb`` implements access to APDB, existing ``dax_ppdb`` package, which was initially created for APDB, will be used to develop PPDB interface.
 ``dax_ppdb`` interfaces will initially be targeted for replication use, they can be extended later for other types of queries, though direct use of SQL (e.g. via ``SQLAlchemy``) may be an option for general queries.
 
